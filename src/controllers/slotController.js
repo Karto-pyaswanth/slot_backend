@@ -2,53 +2,80 @@ const Slot = require('../models/slotModel');
 
 exports.createSlot = async (req, res) => {
     try {
-        console.log("🔹 Received Request:", req.body);  
-
         const { user_name, email, slot_date, slot_time } = req.body;
+        
+        // Validate required fields
         if (!user_name || !email || !slot_date || !slot_time) {
-            console.log("Missing fields in request!");
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        const slotId = await Slot.createSlot(user_name, email, slot_date, slot_time);
+        // Insert the slot into the database
+        const insertId = await Slot.createSlot(user_name, email, slot_date, slot_time);
+        console.log(insertId);
         
-        console.log("✅ Slot Created with ID:", slotId);  
-        res.status(201).json({ message: 'Slot created successfully', slotId });
+        res.status(201).json({ message: "Slot created successfully", id: insertId });
     } catch (error) {
-        console.error("❌ Error inserting slot:", error.message);
-        res.status(500).json({ error: error.message });
+        console.log(error);
+        res.status(500).json({ error: "Failed to create slot" });
     }
-};  // 🔹 FIX: Closing the function properly
+};
 
 exports.getSlots = async (req, res) => {
     try {
         const slots = await Slot.getSlots();
         res.status(200).json(slots);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Failed to fetch slots" });
     }
 };
 
 exports.getSlotById = async (req, res) => {
     try {
-        const slot = await Slot.getSlotById(req.params.id);
+        const { id } = req.params;
+        const slot = await Slot.getSlotById(id);
         if (!slot) {
-            return res.status(404).json({ message: 'Slot not found' });
+            return res.status(404).json({ error: "Slot not found" });
         }
         res.status(200).json(slot);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Failed to fetch slot" });
     }
 };
 
 exports.deleteSlot = async (req, res) => {
     try {
-        const affectedRows = await Slot.deleteSlot(req.params.id);
-        if (affectedRows === 0) {
-            return res.status(404).json({ message: 'Slot not found' });
+        const { id } = req.params;
+        const deleted = await Slot.deleteSlot(id);
+        if (!deleted) {
+            return res.status(404).json({ error: "Slot not found" });
         }
-        res.status(200).json({ message: 'Slot deleted successfully' });
+        res.status(200).json({ message: "Slot deleted successfully" });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Failed to delete slot" });
+    }
+};
+
+exports.updateSlot = async (req, res) => {
+    console.log("Testing update");
+    try {
+        const { id } = req.params;
+        const { user_name, email, slot_date, slot_time } = req.body;
+
+        // Validate required fields
+        if (!user_name || !email || !slot_date || !slot_time) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+
+        // Update the slot in the database
+        const updated = await Slot.updateSlot(id, user_name, email, slot_date, slot_time);
+
+        if (!updated) {
+            return res.status(404).json({ error: "Slot not found" });
+        }
+
+        res.status(200).json({ message: "Slot updated successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to update slot" });
     }
 };
